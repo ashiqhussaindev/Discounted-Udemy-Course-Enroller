@@ -515,6 +515,23 @@ class Udemy:
                 return 1
         return 0
 
+    # Add to Udemy class
+    def save_cookies(self):
+        """Save cookies to file"""
+        with open("cookies.json", "w") as f:
+            cookies = requests.utils.dict_from_cookiejar(self.client.cookies)
+            json.dump(cookies, f)
+    
+    def load_cookies(self):
+        """Load cookies from file"""
+        try:
+            with open("cookies.json") as f:
+                cookies = requests.utils.cookiejar_from_dict(json.load(f))
+                self.client.cookies = cookies
+                return True
+        except FileNotFoundError:
+            return False
+
     def check_for_update(self) -> tuple[str, str]:
         r_version = (
             requests.get(
