@@ -50,35 +50,55 @@ if login_title.__contains__("Update"):
 
 ############## MAIN #############
 
+# Updated login flow
 login_successful = False
+cookies_loaded = False
+
+# First try loading cookies
+if udemy.load_cookies():
+    try:
+        udemy.get_session_info()
+        print(fg + f"Logged in via cookies as {udemy.display_name}")
+        login_successful = True
+        cookies_loaded = True
+    except Exception as e:
+        print(fr + "Saved cookies expired/invalid, reauthenticating...")
+
 while not login_successful:
     try:
-        if udemy.settings["use_browser_cookies"]:
+        if udemy.settings["use_browser_cookies"] and not cookies_loaded:
             udemy.fetch_cookies()
             login_method = "Browser Cookies"
-        elif udemy.settings["email"] and udemy.settings["password"]:
+        elif udemy.settings["email"] and udemy.settings["password"] and not cookies_loaded:
             email, password = udemy.settings["email"], udemy.settings["password"]
-            login_method = "Saved Email and Password"
+            login_method = "Saved Email/Password"
         else:
             email = input("Email: ")
             password = input("Password: ")
-            login_method = "Email and Password"
+            login_method = "Manual Email/Password"
+            
         print(fb + f"Trying to login using {login_method}")
+        
         if "Email" in login_method:
             udemy.manual_login(email, password)
+            udemy.save_cookies()  # Save cookies after successful login
+            
         udemy.get_session_info()
+        
         if "Email" in login_method:
             udemy.settings["email"], udemy.settings["password"] = email, password
+            udemy.save_settings()
+            
         login_successful = True
+
     except LoginException as e:
         print(fr + str(e))
         if "Browser" in login_method:
-            print("Cant login using cookies")
+            print("Can't login using cookies")
             udemy.settings["use_browser_cookies"] = False
         elif "Email" in login_method:
             udemy.settings["email"], udemy.settings["password"] = "", ""
-
-udemy.save_settings()
+            udemy.save_settings()
 
 print(fg + f"Logged in as {udemy.display_name}")
 user_dumb = udemy.is_user_dumb()
